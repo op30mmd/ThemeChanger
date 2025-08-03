@@ -201,14 +201,18 @@ public class ThemeChangerApplicationContext : ApplicationContext
         // 6. Update settings form colors if it's open
         settingsForm?.UpdateThemeColors();
 
-        // 7. Force a system-wide theme refresh
+        // 7. Force a system-wide theme refresh by restarting DWM
         try
         {
-            Process.Start("RunDll32.exe", "themeui.dll,ClearThemeCache");
+            foreach (var process in Process.GetProcessesByName("dwm"))
+            {
+                process.Kill();
+                LogToFile($"[INFO] Killed dwm.exe process (ID: {process.Id}) to force theme refresh.");
+            }
         }
         catch (Exception ex)
         {
-            LogToFile($"[ERROR] Failed to force theme refresh: {ex.Message}");
+            LogToFile($"[ERROR] Failed to restart DWM: {ex.Message}");
         }
     }
 
