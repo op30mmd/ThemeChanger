@@ -406,6 +406,9 @@ public class ThemeInfo
 
 public class SettingsForm : Form
 {
+    [DllImport("uxtheme.dll", ExactSpelling = true, CharSet = CharSet.Unicode)]
+    private static extern int SetWindowTheme(IntPtr hwnd, string pszSubAppName, string pszSubIdList);
+
     private AppConfig config;
     private TextBox sunriseTextBox;
     private TextBox sunsetTextBox;
@@ -421,6 +424,11 @@ public class SettingsForm : Form
         this.config = JsonConvert.DeserializeObject<AppConfig>(JsonConvert.SerializeObject(config));
         InitializeComponent();
         ApplyThemeColors();
+        SetWindowTheme(this.Handle, "Explorer", null);
+        foreach (Control control in this.Controls)
+        {
+            SetWindowTheme(control.Handle, "Explorer", null);
+        }
         LoadSettings();
     }
 
