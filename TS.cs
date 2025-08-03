@@ -420,6 +420,7 @@ public class SettingsForm : Form
     {
         this.config = JsonConvert.DeserializeObject<AppConfig>(JsonConvert.SerializeObject(config));
         InitializeComponent();
+        ApplyThemeColors();
         LoadSettings();
     }
 
@@ -475,6 +476,34 @@ public class SettingsForm : Form
             nightThemeLabel, nightThemeComboBox, nightWallpaperLabel, nightWallpaperTextBox, nightWallpaperButton,
             saveButton, cancelButton
         });
+    }
+
+    private void ApplyThemeColors()
+    {
+        this.BackColor = SystemColors.Window;
+        this.ForeColor = SystemColors.WindowText;
+
+        foreach (Control control in this.Controls)
+        {
+            if (control is TextBox || control is ComboBox || control is NumericUpDown)
+            {
+                control.BackColor = SystemColors.Control;
+                control.ForeColor = SystemColors.ControlText;
+            }
+            else
+            {
+                control.BackColor = SystemColors.Window;
+                control.ForeColor = SystemColors.WindowText;
+            }
+        }
+
+        // Special handling for buttons as they have their own style
+        foreach (Button button in this.Controls.OfType<Button>())
+        {
+            button.BackColor = SystemColors.Control;
+            button.ForeColor = SystemColors.ControlText;
+            button.FlatStyle = FlatStyle.System;
+        }
     }
 
     private void LoadSettings()
