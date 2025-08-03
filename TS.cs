@@ -36,15 +36,14 @@ public class ThemeChangerApplicationContext : ApplicationContext
     [DllImport("uxtheme.dll", CharSet = CharSet.Auto, SetLastError = true)]
     private static extern int SetSystemVisualStyle(string pszFilename, string pszColor, string pszSize, int dwReserved);
 
-    [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-    private static extern IntPtr SendMessageTimeout(IntPtr hWnd, uint Msg, IntPtr wParam, string lParam, uint fuFlags, uint uTimeout, out IntPtr lpdwResult);
+    [DllImport("user32.dll", CharSet = CharSet.Auto)]
+    private static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
     private const int SPI_SETDESKWALLPAPER = 20;
     private const int SPIF_UPDATEINIFILE = 0x01;
     private const int SPIF_SENDCHANGE = 0x02;
     private const int HWND_BROADCAST = 0xffff;
     private const int WM_SETTINGCHANGE = 0x001A;
-    private const int SMTO_ABORTIFHUNG = 0x0002;
 
     public ThemeChangerApplicationContext()
     {
@@ -201,19 +200,6 @@ public class ThemeChangerApplicationContext : ApplicationContext
         // 6. Update settings form colors if it's open
         settingsForm?.UpdateThemeColors();
 
-        // 7. Force a system-wide theme refresh by restarting DWM
-        try
-        {
-            foreach (var process in Process.GetProcessesByName("dwm"))
-            {
-                process.Kill();
-                LogToFile($"[INFO] Killed dwm.exe process (ID: {process.Id}) to force theme refresh.");
-            }
-        }
-        catch (Exception ex)
-        {
-            LogToFile($"[ERROR] Failed to restart DWM: {ex.Message}");
-        }
     }
 
     private void ApplyThemeFile(string themePath)
@@ -316,14 +302,19 @@ public class ThemeChangerApplicationContext : ApplicationContext
     private void RefreshSystemParameters()
     {
         LogToFile("[REFRESH] Broadcasting system setting changes.");
-        SendMessageTimeout((IntPtr)HWND_BROADCAST, WM_SETTINGCHANGE, IntPtr.Zero, "ImmersiveColorSet", SMTO_ABORTIFHUNG, 5000, out _);
-        SendMessageTimeout((IntPtr)HWND_BROADCAST, WM_SETTINGCHANGE, IntPtr.Zero, "Themes", SMTO_ABORTIFHUNG, 5000, out _);
-        SendMessageTimeout((IntPtr)HWND_BROADCAST, WM_SETTINGCHANGE, IntPtr.Zero, null, SMTO_ABORTIFHUNG, 5000, out _);
+        PostMessage((IntPtr)HWND_BROADCAST, WM_SETTINGCHANGE, IntPtr.Zero, IntPtr.Zero);
     }
 
     private void ToggleTheme_Click(object sender, EventArgs e)
     {
-        LogToFile("[ACTION] Manual toggle initiated. The theme will revert to the schedule on the next timer tick.");
+        if (automaticSwitchingMenuItem.Checked)
+        {
+            automaticSwitchingMenuItem.Checked = false;
+            timer.Stop();
+            LogToFile("[ACTION] Manual toggle initiated. Automatic switching disabled.");
+            automaticSwitchingMenuItem.Text = "Automatic Switching (Disabled)";
+        }
+
         isCurrentlyDay = !isCurrentlyDay;
         if (isCurrentlyDay)
         {
@@ -340,12 +331,14 @@ public class ThemeChangerApplicationContext : ApplicationContext
         if (automaticSwitchingMenuItem.Checked)
         {
             LogToFile("[ACTION] Automatic switching enabled.");
+            automaticSwitchingMenuItem.Text = "Automatic Switching";
             UpdateTheme();
             timer.Start();
         }
         else
         {
             LogToFile("[ACTION] Automatic switching disabled.");
+            automaticSwitchingMenuItem.Text = "Automatic Switching (Disabled)";
             timer.Stop();
         }
     }
