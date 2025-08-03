@@ -204,7 +204,7 @@ public class ThemeChangerApplicationContext : ApplicationContext
         // 7. Force a system-wide theme refresh
         try
         {
-            Process.Start("RunDll32.exe", "themeui.dll,InstallTheme");
+            Process.Start("RunDll32.exe", "themeui.dll,ClearThemeCache");
         }
         catch (Exception ex)
         {
