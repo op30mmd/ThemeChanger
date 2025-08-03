@@ -305,13 +305,7 @@ public class ThemeChangerApplicationContext : ApplicationContext
 
     private void ToggleTheme_Click(object sender, EventArgs e)
     {
-        if (automaticSwitchingMenuItem.Checked)
-        {
-            automaticSwitchingMenuItem.Checked = false;
-            timer.Stop();
-            LogToFile("[ACTION] Manual toggle initiated. Automatic switching disabled.");
-        }
-
+        LogToFile("[ACTION] Manual toggle initiated. The theme will revert to the schedule on the next timer tick.");
         isCurrentlyDay = !isCurrentlyDay;
         if (isCurrentlyDay)
         {
