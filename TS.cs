@@ -16,6 +16,7 @@ public class ThemeChangerApplicationContext : ApplicationContext
     private AppConfig config;
     private bool isCurrentlyDay;
     private ToolStripMenuItem automaticSwitchingMenuItem;
+    private SettingsForm settingsForm;
     private string configPath = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "appsettings.json");
     private string logPath = Path.Combine(Path.GetDirectoryName(Application.ExecutablePath), "ThemeChanger.log");
 
@@ -196,6 +197,9 @@ public class ThemeChangerApplicationContext : ApplicationContext
         // 5. Perform a robust refresh at the end.
         RefreshSystemParameters();
         notifyIcon.Text = $"Theme Changer - {(isDay ? "Day" : "Night")} Theme";
+
+        // 6. Update settings form colors if it's open
+        settingsForm?.UpdateThemeColors();
     }
 
     private void ApplyThemeFile(string themePath)
@@ -334,22 +338,28 @@ public class ThemeChangerApplicationContext : ApplicationContext
 
     private void Settings_Click(object sender, EventArgs e)
     {
+        if (settingsForm != null)
+        {
+            settingsForm.Activate();
+            return;
+        }
+
         bool wasTimerActive = timer.Enabled;
         timer.Stop();
 
-        using (var settingsForm = new SettingsForm(config))
-        {
-            if (settingsForm.ShowDialog() == DialogResult.OK)
-            {
-                config = settingsForm.GetUpdatedConfig();
-                SaveConfiguration();
-                UpdateTimerInterval();
-                LogToFile("[ACTION] Settings saved and updated.");
+        settingsForm = new SettingsForm(config);
+        settingsForm.FormClosed += (s, args) => settingsForm = null;
 
-                if (automaticSwitchingMenuItem.Checked)
-                {
-                    UpdateTheme();
-                }
+        if (settingsForm.ShowDialog() == DialogResult.OK)
+        {
+            config = settingsForm.GetUpdatedConfig();
+            SaveConfiguration();
+            UpdateTimerInterval();
+            LogToFile("[ACTION] Settings saved and updated.");
+
+            if (automaticSwitchingMenuItem.Checked)
+            {
+                UpdateTheme();
             }
         }
 
@@ -423,13 +433,18 @@ public class SettingsForm : Form
     {
         this.config = JsonConvert.DeserializeObject<AppConfig>(JsonConvert.SerializeObject(config));
         InitializeComponent();
+        UpdateThemeColors();
+        LoadSettings();
+    }
+
+    public void UpdateThemeColors()
+    {
         ApplyThemeColors();
         SetWindowTheme(this.Handle, "Explorer", null);
         foreach (Control control in this.Controls)
         {
             SetWindowTheme(control.Handle, "Explorer", null);
         }
-        LoadSettings();
     }
 
     private void InitializeComponent()
