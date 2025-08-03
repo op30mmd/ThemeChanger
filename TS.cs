@@ -200,6 +200,16 @@ public class ThemeChangerApplicationContext : ApplicationContext
 
         // 6. Update settings form colors if it's open
         settingsForm?.UpdateThemeColors();
+
+        // 7. Force a system-wide theme refresh
+        try
+        {
+            Process.Start("RunDll32.exe", "themeui.dll,InstallTheme");
+        }
+        catch (Exception ex)
+        {
+            LogToFile($"[ERROR] Failed to force theme refresh: {ex.Message}");
+        }
     }
 
     private void ApplyThemeFile(string themePath)
